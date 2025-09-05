@@ -16,16 +16,89 @@
       <main>
         <div class="content-area">
           <div class="subtotal-section">
-            <h2>💰 Scraped Subtotal</h2>
+            <h2>💰 Total Amount</h2>
             <div id="subtotal-display" class="subtotal-display">
-              <p class="loading">Loading subtotal...</p>
+              <p class="loading">Loading total...</p>
             </div>
           </div>
-          <div class="info-section">
-            <p>
-              This popup was triggered by clicking the "Degen Pay" button on the
-              page.
-            </p>
+
+          <div class="bet-section">
+            <h2>🎲 Choose Your Bet</h2>
+            <div class="bet-input-container">
+              <div class="bet-options">
+                <button type="button" class="bet-option-btn" data-option="25">
+                  25%
+                </button>
+                <button type="button" class="bet-option-btn" data-option="50">
+                  50%
+                </button>
+                <button
+                  type="button"
+                  class="bet-option-btn"
+                  data-option="custom"
+                >
+                  Custom
+                </button>
+                <button
+                  type="button"
+                  class="bet-option-btn"
+                  data-option="coinflip"
+                >
+                  Coinflip
+                </button>
+              </div>
+
+              <div
+                id="custom-input"
+                class="custom-input-wrapper"
+                style="display: none"
+              >
+                <div class="bet-input-wrapper">
+                  <span class="currency-symbol">$</span>
+                  <input
+                    type="number"
+                    id="bet-amount"
+                    class="bet-input"
+                    placeholder="0.00"
+                    min="0.01"
+                    step="0.01"
+                    disabled
+                  />
+                </div>
+              </div>
+
+              <div
+                id="coinflip-choice"
+                class="coinflip-choice-wrapper"
+                style="display: none"
+              >
+                <p class="coinflip-text">🪙 Flip a coin and choose:</p>
+                <div class="coinflip-buttons">
+                  <button
+                    type="button"
+                    class="coinflip-btn"
+                    data-choice="heads"
+                  >
+                    👑 Heads
+                  </button>
+                  <button
+                    type="button"
+                    class="coinflip-btn"
+                    data-choice="tails"
+                  >
+                    🔄 Tails
+                  </button>
+                </div>
+              </div>
+
+              <div id="bet-validation" class="bet-validation"></div>
+            </div>
+          </div>
+
+          <div class="action-section">
+            <button id="place-bet-btn" class="place-bet-btn" disabled>
+              🎯 Place Bet
+            </button>
           </div>
         </div>
       </main>

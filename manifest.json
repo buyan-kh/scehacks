@@ -18,7 +18,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["popup.html", "styles.css", "popup.js"],
+      "resources": ["popup.html", "payment-form.html", "roulette.html", "coinflip.html", "styles.css", "popup.js", "payment-form.js", "roulette.css", "roulette.js", "coinflip.css", "coinflip.js"],
       "matches": ["<all_urls>"]
     }
   ]

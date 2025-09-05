@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coinflip - Degen Pay</title>
+    <link rel="stylesheet" href="coinflip.css" />
+  </head>
+  <body>
+    <div class="coinflip-container">
+      <header>
+        <h1>🪙 Coinflip Time!</h1>
+        <p id="bet-info">Your bet: $0.00 on Heads/Tails</p>
+      </header>
+
+      <main>
+        <div class="coin-section">
+          <div class="coin-container">
+            <div id="coin" class="coin">
+              <div class="coin-side heads">👑</div>
+              <div class="coin-side tails">🔄</div>
+            </div>
+          </div>
+
+          <div class="flip-controls">
+            <button id="flip-btn" class="flip-btn">🎯 FLIP THE COIN</button>
+          </div>
+        </div>
+
+        <div id="result-section" class="result-section" style="display: none">
+          <div id="result-display" class="result-display">
+            <h2 id="result-text">Result</h2>
+            <p id="result-description">Description</p>
+            <div id="coin-result" class="coin-result">🪙</div>
+          </div>
+          <button id="play-again-btn" class="play-again-btn">
+            🎯 Play Again
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <script src="coinflip.js"></script>
+  </body>
+</html>

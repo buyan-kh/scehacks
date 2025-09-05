@@ -6,6 +6,12 @@
   
   let overlay = null;
   let isPopupOpen = false;
+  let paymentFormOverlay = null;
+  let isPaymentFormOpen = false;
+  let rouletteOverlay = null;
+  let isRouletteOpen = false;
+  let coinflipOverlay = null;
+  let isCoinflipOpen = false;
   let degenButtons = new Set(); // Track added buttons to avoid duplicates
   let isAddingDegenButton = false; // Flag to prevent mutation observer from triggering
   
@@ -58,10 +64,505 @@
   }
 
   /**
+   * Creates and shows the payment form overlay
+   * Is idempotent - does nothing if already open
+   */
+  function showPaymentForm() {
+    // Check if payment form is already open (idempotent)
+    if (isPaymentFormOpen || paymentFormOverlay) {
+      return;
+    }
+    
+    // Create payment form overlay container
+    paymentFormOverlay = document.createElement('div');
+    paymentFormOverlay.id = 'payment-form-overlay';
+    paymentFormOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 2147483647;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+    
+    // Create iframe container for payment form
+    const iframeContainer = document.createElement('div');
+    iframeContainer.style.cssText = `
+      position: relative;
+      width: 90%;
+      max-width: 600px;
+      height: 90%;
+      max-height: 800px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    `;
+    
+    // Create close button
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '×';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      font-size: 24px;
+      font-weight: bold;
+      color: #666;
+      cursor: pointer;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    `;
+    
+    // Add hover effects to close button
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.background = 'rgba(0, 0, 0, 0.2)';
+      closeButton.style.color = '#333';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.background = 'rgba(0, 0, 0, 0.1)';
+      closeButton.style.color = '#666';
+    });
+    
+    // Create iframe for payment form
+    const iframe = document.createElement('iframe');
+    iframe.src = chrome.runtime.getURL('payment-form.html');
+    iframe.style.cssText = `
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 12px;
+    `;
+    
+    // Assemble the overlay
+    iframeContainer.appendChild(closeButton);
+    iframeContainer.appendChild(iframe);
+    paymentFormOverlay.appendChild(iframeContainer);
+    
+    // Add to document
+    document.body.appendChild(paymentFormOverlay);
+    isPaymentFormOpen = true;
+    
+    // Add event listeners
+    closeButton.addEventListener('click', hidePaymentForm);
+    paymentFormOverlay.addEventListener('click', (e) => {
+      // Close when clicking on overlay background (not the iframe container)
+      if (e.target === paymentFormOverlay) {
+        hidePaymentForm();
+      }
+    });
+    
+    // Close on Escape key
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        hidePaymentForm();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    // Store the escape handler for cleanup
+    paymentFormOverlay._escapeHandler = handleEscape;
+    
+    // Listen for messages from payment form
+    const handleMessage = (event) => {
+      if (event.data.type === 'PAYMENT_FORM_SUBMITTED') {
+        console.log('💳 Payment form submitted:', event.data.data);
+        hidePaymentForm();
+        // Show Degen Pay popup with payment data
+        showExtensionPopup(event.data.data);
+      } else if (event.data.type === 'PAYMENT_FORM_CANCELLED') {
+        console.log('💳 Payment form cancelled');
+        hidePaymentForm();
+      } else if (event.data.type === 'SHOW_ROULETTE') {
+        console.log('🎰 Showing roulette wheel:', event.data.data);
+        showRouletteWheel(event.data.data);
+      } else if (event.data.type === 'CLOSE_ROULETTE') {
+        console.log('🎰 Closing roulette wheel');
+        hideRouletteWheel();
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    paymentFormOverlay._messageHandler = handleMessage;
+    
+    // Prevent body scroll when overlay is open
+    document.body.style.overflow = 'hidden';
+    
+    console.log('💳 Payment form opened');
+  }
+  
+  /**
+   * Hides the payment form overlay
+   */
+  function hidePaymentForm() {
+    if (!paymentFormOverlay || !isPaymentFormOpen) {
+      return;
+    }
+    
+    // Remove escape key listener
+    if (paymentFormOverlay._escapeHandler) {
+      document.removeEventListener('keydown', paymentFormOverlay._escapeHandler);
+    }
+    
+    // Remove message listener
+    if (paymentFormOverlay._messageHandler) {
+      window.removeEventListener('message', paymentFormOverlay._messageHandler);
+    }
+    
+    // Remove overlay from DOM
+    document.body.removeChild(paymentFormOverlay);
+    paymentFormOverlay = null;
+    isPaymentFormOpen = false;
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
+    
+    console.log('💳 Payment form closed');
+  }
+
+  /**
+   * Creates and shows the roulette wheel overlay
+   */
+  function showRouletteWheel(data) {
+    // Check if roulette is already open (idempotent)
+    if (isRouletteOpen || rouletteOverlay) {
+      return;
+    }
+    
+    // Create roulette overlay container
+    rouletteOverlay = document.createElement('div');
+    rouletteOverlay.id = 'roulette-overlay';
+    rouletteOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.95);
+      z-index: 2147483648;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+    
+    // Create iframe container for roulette
+    const iframeContainer = document.createElement('div');
+    iframeContainer.style.cssText = `
+      position: relative;
+      width: 90%;
+      max-width: 500px;
+      height: 80%;
+      max-height: 600px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(255, 215, 0, 0.5);
+      overflow: hidden;
+    `;
+    
+    // Create close button
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '×';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      font-size: 24px;
+      font-weight: bold;
+      color: #666;
+      cursor: pointer;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    `;
+    
+    // Add hover effects to close button
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.background = 'rgba(0, 0, 0, 0.2)';
+      closeButton.style.color = '#333';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.background = 'rgba(0, 0, 0, 0.1)';
+      closeButton.style.color = '#666';
+    });
+    
+    // Create iframe for roulette
+    const iframe = document.createElement('iframe');
+    const params = new URLSearchParams({
+      betAmount: data.betAmount.toString(),
+      totalAmount: data.totalAmount.toString()
+    });
+    iframe.src = chrome.runtime.getURL('roulette.html') + '?' + params.toString();
+    iframe.style.cssText = `
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 12px;
+    `;
+    
+    // Assemble the overlay
+    iframeContainer.appendChild(closeButton);
+    iframeContainer.appendChild(iframe);
+    rouletteOverlay.appendChild(iframeContainer);
+    
+    // Add to document
+    document.body.appendChild(rouletteOverlay);
+    isRouletteOpen = true;
+    
+    // Add event listeners
+    closeButton.addEventListener('click', hideRouletteWheel);
+    rouletteOverlay.addEventListener('click', (e) => {
+      // Close when clicking on overlay background (not the iframe container)
+      if (e.target === rouletteOverlay) {
+        hideRouletteWheel();
+      }
+    });
+    
+    // Close on Escape key
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        hideRouletteWheel();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    // Store the escape handler for cleanup
+    rouletteOverlay._escapeHandler = handleEscape;
+    
+    // Listen for messages from roulette
+    const handleRouletteMessage = (event) => {
+      if (event.data.type === 'CLOSE_ROULETTE') {
+        hideRouletteWheel();
+      }
+    };
+    
+    window.addEventListener('message', handleRouletteMessage);
+    rouletteOverlay._messageHandler = handleRouletteMessage;
+    
+    // Prevent body scroll when overlay is open
+    document.body.style.overflow = 'hidden';
+    
+    console.log('🎰 Roulette wheel opened');
+  }
+  
+  /**
+   * Hides the roulette wheel overlay
+   */
+  function hideRouletteWheel() {
+    if (!rouletteOverlay || !isRouletteOpen) {
+      return;
+    }
+    
+    // Remove escape key listener
+    if (rouletteOverlay._escapeHandler) {
+      document.removeEventListener('keydown', rouletteOverlay._escapeHandler);
+    }
+    
+    // Remove message listener
+    if (rouletteOverlay._messageHandler) {
+      window.removeEventListener('message', rouletteOverlay._messageHandler);
+    }
+    
+    // Remove overlay from DOM
+    document.body.removeChild(rouletteOverlay);
+    rouletteOverlay = null;
+    isRouletteOpen = false;
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
+    
+    console.log('🎰 Roulette wheel closed');
+  }
+
+  /**
+   * Creates and shows the coinflip game overlay
+   */
+  function showCoinflipGame(data) {
+    // Check if coinflip is already open (idempotent)
+    if (isCoinflipOpen || coinflipOverlay) {
+      return;
+    }
+    
+    // Create coinflip overlay container
+    coinflipOverlay = document.createElement('div');
+    coinflipOverlay.id = 'coinflip-overlay';
+    coinflipOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.95);
+      z-index: 2147483649;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+    
+    // Create iframe container for coinflip
+    const iframeContainer = document.createElement('div');
+    iframeContainer.style.cssText = `
+      position: relative;
+      width: 90%;
+      max-width: 450px;
+      height: 70%;
+      max-height: 500px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(255, 215, 0, 0.5);
+      overflow: hidden;
+    `;
+    
+    // Create close button
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '×';
+    closeButton.style.cssText = `
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      font-size: 24px;
+      font-weight: bold;
+      color: #666;
+      cursor: pointer;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    `;
+    
+    // Add hover effects to close button
+    closeButton.addEventListener('mouseenter', () => {
+      closeButton.style.background = 'rgba(0, 0, 0, 0.2)';
+      closeButton.style.color = '#333';
+    });
+    
+    closeButton.addEventListener('mouseleave', () => {
+      closeButton.style.background = 'rgba(0, 0, 0, 0.1)';
+      closeButton.style.color = '#666';
+    });
+    
+    // Create iframe for coinflip
+    const iframe = document.createElement('iframe');
+    const params = new URLSearchParams({
+      betAmount: data.betAmount.toString(),
+      choice: data.choice
+    });
+    iframe.src = chrome.runtime.getURL('coinflip.html') + '?' + params.toString();
+    iframe.style.cssText = `
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 12px;
+    `;
+    
+    // Assemble the overlay
+    iframeContainer.appendChild(closeButton);
+    iframeContainer.appendChild(iframe);
+    coinflipOverlay.appendChild(iframeContainer);
+    
+    // Add to document
+    document.body.appendChild(coinflipOverlay);
+    isCoinflipOpen = true;
+    
+    // Add event listeners
+    closeButton.addEventListener('click', hideCoinflipGame);
+    coinflipOverlay.addEventListener('click', (e) => {
+      // Close when clicking on overlay background (not the iframe container)
+      if (e.target === coinflipOverlay) {
+        hideCoinflipGame();
+      }
+    });
+    
+    // Close on Escape key
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        hideCoinflipGame();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    // Store the escape handler for cleanup
+    coinflipOverlay._escapeHandler = handleEscape;
+    
+    // Listen for messages from coinflip
+    const handleCoinflipMessage = (event) => {
+      if (event.data.type === 'CLOSE_COINFLIP') {
+        hideCoinflipGame();
+      }
+    };
+    
+    window.addEventListener('message', handleCoinflipMessage);
+    coinflipOverlay._messageHandler = handleCoinflipMessage;
+    
+    // Prevent body scroll when overlay is open
+    document.body.style.overflow = 'hidden';
+    
+    console.log('🪙 Coinflip game opened');
+  }
+  
+  /**
+   * Hides the coinflip game overlay
+   */
+  function hideCoinflipGame() {
+    if (!coinflipOverlay || !isCoinflipOpen) {
+      return;
+    }
+    
+    // Remove escape key listener
+    if (coinflipOverlay._escapeHandler) {
+      document.removeEventListener('keydown', coinflipOverlay._escapeHandler);
+    }
+    
+    // Remove message listener
+    if (coinflipOverlay._messageHandler) {
+      window.removeEventListener('message', coinflipOverlay._messageHandler);
+    }
+    
+    // Remove overlay from DOM
+    document.body.removeChild(coinflipOverlay);
+    coinflipOverlay = null;
+    isCoinflipOpen = false;
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
+    
+    console.log('🪙 Coinflip game closed');
+  }
+
+  /**
    * Creates and shows a full-screen overlay with the extension popup
    * Is idempotent - does nothing if already open
    */
-  function showExtensionPopup() {
+  function showExtensionPopup(paymentData = null) {
     // Check if popup is already open (idempotent)
     if (isPopupOpen || overlay) {
       return;
@@ -136,16 +637,26 @@
       closeButton.style.color = '#666';
     });
     
-    // Create iframe with subtotal data as URL parameter
+    // Create iframe with subtotal data and payment data as URL parameters
     const iframe = document.createElement('iframe');
     let popupUrl = chrome.runtime.getURL('popup.html');
     
+    const params = new URLSearchParams();
+    
     if (subtotalData) {
-      const params = new URLSearchParams({
-        subtotal: subtotalData.amount,
-        raw: subtotalData.raw,
-        numeric: subtotalData.numeric.toString()
-      });
+      params.append('subtotal', subtotalData.amount);
+      params.append('raw', subtotalData.raw);
+      params.append('numeric', subtotalData.numeric.toString());
+    }
+    
+    if (paymentData) {
+      params.append('paymentSubmitted', 'true');
+      params.append('cardNumber', paymentData.cardNumber);
+      params.append('cardholderName', paymentData.cardholderName);
+      params.append('email', paymentData.email);
+    }
+    
+    if (params.toString()) {
       popupUrl += '?' + params.toString();
     }
     
@@ -269,7 +780,7 @@
     button.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      showExtensionPopup();
+      showPaymentForm();
     });
     
     return button;
@@ -447,6 +958,29 @@
     });
   }
   
+  // Global message handler for all popups
+  window.addEventListener('message', (event) => {
+    if (event.data.type === 'SHOW_ROULETTE') {
+      console.log('🎰 Showing roulette wheel:', event.data.data);
+      showRouletteWheel(event.data.data);
+    } else if (event.data.type === 'CLOSE_ROULETTE') {
+      console.log('🎰 Closing roulette wheel');
+      hideRouletteWheel();
+    } else if (event.data.type === 'SHOW_COINFLIP') {
+      console.log('🪙 Showing coinflip:', event.data.data);
+      showCoinflipGame(event.data.data);
+    } else if (event.data.type === 'CLOSE_COINFLIP') {
+      console.log('🪙 Closing coinflip');
+      hideCoinflipGame();
+    } else if (event.data.type === 'PLAY_AGAIN') {
+      console.log('🎯 Play again - returning to main popup');
+      hideCoinflipGame();
+      // Get the subtotal data and show the main popup again
+      const subtotalData = scrapeSubtotal();
+      showExtensionPopup(null, subtotalData);
+    }
+  });
+
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeDegenPay);
