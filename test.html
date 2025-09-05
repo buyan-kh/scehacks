@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Extension Test Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .test-section {
+        margin: 30px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      button,
+      a {
+        display: inline-block;
+        margin: 10px;
+        padding: 10px 20px;
+        background: #007cba;
+        color: white;
+        text-decoration: none;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover,
+      a:hover {
+        background: #005a87;
+      }
+      .instructions {
+        background: #f0f8ff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>💎 Degen Pay Extension Test Page</h1>
+
+    <div class="instructions">
+      <h3>Instructions:</h3>
+      <p>
+        This page contains various checkout buttons. The Degen Pay extension
+        will automatically add "💎 Degen Pay" buttons under each checkout
+        button.
+      </p>
+      <p>
+        Look for the purple gradient "Degen Pay" buttons that appear below the
+        checkout elements on this page.
+      </p>
+    </div>
+
+    <div class="test-section">
+      <h2>Test Buttons</h2>
+      <button>Regular Button</button>
+      <button>Checkout Button</button>
+      <button>Proceed to Checkout</button>
+      <button>Complete Checkout Process</button>
+    </div>
+
+    <div class="test-section">
+      <h2>Test Links</h2>
+      <a href="#checkout">Checkout Link</a>
+      <a href="#cart" title="Go to checkout">Cart Link with Checkout Title</a>
+      <a href="#payment" alt="checkout process"
+        >Payment Link with Checkout Alt</a
+      >
+      <a href="#regular">Regular Link</a>
+    </div>
+
+    <div class="test-section">
+      <h2>Test Text Elements</h2>
+      <p>
+        This paragraph contains the word <strong>checkout</strong> in the
+        middle.
+      </p>
+      <div>Click here to <span>checkout</span> your items</div>
+      <h3>Checkout Your Order</h3>
+      <p>Regular paragraph without checkout text.</p>
+    </div>
+
+    <div class="test-section">
+      <h2>Form Elements</h2>
+      <input type="button" value="Checkout Now" />
+      <input type="submit" value="Proceed to Checkout" />
+      <input type="text" placeholder="Enter checkout code" />
+    </div>
+
+    <div class="test-section">
+      <h2>Nested Elements</h2>
+      <div>
+        <div>
+          <button>Deeply nested checkout button</button>
+        </div>
+      </div>
+      <div>
+        <span>
+          <a href="#test">Nested checkout link</a>
+        </span>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>Subtotal Test (Nike-style)</h2>
+      <p>
+        This section contains the exact HTML structure you mentioned for testing
+        subtotal scraping:
+      </p>
+      <table style="width: 100%; border-collapse: collapse; margin: 10px 0">
+        <tr
+          class="transaction-summary-footer"
+          data-testid="transaction-summary-footer"
+        >
+          <th scope="row" class="transaction-summary-item-label">Subtotal</th>
+          <td class="transaction-summary-item-amount">$100.00</td>
+        </tr>
+      </table>
+      <button>Checkout</button>
+      <p>
+        <em
+          >Note: A "Degen Pay" button should appear below the checkout button
+          above.</em
+        >
+      </p>
+    </div>
+
+    <script>
+      // Add some dynamic content to test mutation observer
+      setTimeout(() => {
+        const dynamicSection = document.createElement("div");
+        dynamicSection.className = "test-section";
+        dynamicSection.innerHTML = `
+                <h2>Dynamically Added Content</h2>
+                <button>Dynamic Checkout Button</button>
+                <p>This content was added after page load. A "Degen Pay" button should appear below the checkout button above.</p>
+            `;
+        document.body.appendChild(dynamicSection);
+      }, 2000);
+    </script>
+  </body>
+</html>

@@ -1,39 +1,35 @@
-// Gambling Lovers Extension - Basic Foundation
-class GamblingLoversExtension {
+// Degen Pay Extension - The Ultimate Checkout Experience
+class DegenPayExtension {
   constructor() {
     this.initializeElements();
     this.bindEvents();
     this.loadData();
+    this.loadSubtotalFromURL();
   }
 
   initializeElements() {
     // Add your element selectors here as you build
     this.contentArea = document.querySelector(".content-area");
-    this.dashboardButton = document.getElementById("viewDashboard");
+    this.subtotalDisplay = document.getElementById("subtotal-display");
   }
 
   bindEvents() {
     // Add your event listeners here as you build
-    if (this.dashboardButton) {
-      this.dashboardButton.addEventListener("click", () => {
-        this.openDashboard();
-      });
-    }
-    console.log("Gambling Lovers Extension initialized!");
+    console.log("Degen Pay Extension initialized!");
   }
 
   loadData() {
     // Load any saved data from Chrome storage
-    chrome.storage.local.get(["gamblingData"], (result) => {
-      if (result.gamblingData) {
-        console.log("Loaded data:", result.gamblingData);
+    chrome.storage.local.get(["degenPayData"], (result) => {
+      if (result.degenPayData) {
+        console.log("Loaded data:", result.degenPayData);
       }
     });
   }
 
   saveData(data) {
     // Save data to Chrome storage
-    chrome.storage.local.set({ gamblingData: data });
+    chrome.storage.local.set({ degenPayData: data });
   }
 
   // Utility methods for future use
@@ -49,15 +45,60 @@ class GamblingLoversExtension {
     return element;
   }
 
-  openDashboard() {
-    // Open the gambling dashboard in a new tab
-    const dashboardUrl = "http://localhost:3000";
-    chrome.tabs.create({ url: dashboardUrl });
-    this.showMessage("Opening dashboard...", "info");
+  loadSubtotalFromURL() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const subtotal = urlParams.get('subtotal');
+      const raw = urlParams.get('raw');
+      const numeric = urlParams.get('numeric');
+
+      if (subtotal && this.subtotalDisplay) {
+        this.displaySubtotal({
+          amount: subtotal,
+          raw: raw || `$${subtotal}`,
+          numeric: numeric ? parseFloat(numeric) : parseFloat(subtotal)
+        });
+      } else {
+        this.displayNoSubtotal();
+      }
+    } catch (error) {
+      console.error('Error loading subtotal from URL:', error);
+      this.displayNoSubtotal();
+    }
+  }
+
+  displaySubtotal(subtotalData) {
+    if (!this.subtotalDisplay) return;
+
+    this.subtotalDisplay.innerHTML = `
+      <div class="subtotal-info">
+        <div class="subtotal-amount">$${subtotalData.amount}</div>
+        <div class="subtotal-details">
+          <p><strong>Raw text:</strong> ${subtotalData.raw}</p>
+          <p><strong>Numeric value:</strong> ${subtotalData.numeric}</p>
+        </div>
+        <div class="subtotal-status success">✅ Successfully scraped!</div>
+      </div>
+    `;
+  }
+
+  displayNoSubtotal() {
+    if (!this.subtotalDisplay) return;
+
+    this.subtotalDisplay.innerHTML = `
+      <div class="subtotal-info">
+        <div class="subtotal-amount">No subtotal found</div>
+        <div class="subtotal-details">
+          <p>Could not find a subtotal on this page.</p>
+          <p>Make sure you're on a checkout or cart page with a subtotal.</p>
+        </div>
+        <div class="subtotal-status error">❌ No subtotal detected</div>
+      </div>
+    `;
   }
 }
 
 // Initialize the extension when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  window.gamblingExtension = new GamblingLoversExtension();
+  window.degenPayExtension = new DegenPayExtension();
 });
