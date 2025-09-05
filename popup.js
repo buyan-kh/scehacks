@@ -9,10 +9,16 @@ class GamblingLoversExtension {
   initializeElements() {
     // Add your element selectors here as you build
     this.contentArea = document.querySelector(".content-area");
+    this.dashboardButton = document.getElementById("viewDashboard");
   }
 
   bindEvents() {
     // Add your event listeners here as you build
+    if (this.dashboardButton) {
+      this.dashboardButton.addEventListener("click", () => {
+        this.openDashboard();
+      });
+    }
     console.log("Gambling Lovers Extension initialized!");
   }
 
@@ -41,6 +47,13 @@ class GamblingLoversExtension {
     if (className) element.className = className;
     if (textContent) element.textContent = textContent;
     return element;
+  }
+
+  openDashboard() {
+    // Open the gambling dashboard in a new tab
+    const dashboardUrl = "http://localhost:3000";
+    chrome.tabs.create({ url: dashboardUrl });
+    this.showMessage("Opening dashboard...", "info");
   }
 }
 

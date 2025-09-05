@@ -3,7 +3,7 @@
   "name": "gambling",
   "version": "1.0",
   "description": "gambling extension",
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Gambling"
