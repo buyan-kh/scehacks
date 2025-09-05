@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Degen Pay",
+  "version": "1.0",
+  "description": "Degen Pay - The ultimate checkout experience",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Degen Pay"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["popup.html", "styles.css", "popup.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
